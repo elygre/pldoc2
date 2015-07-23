@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
   <xsl:param name="targetFolder"/>
   <xsl:param name="sourceRootFolder"/>
   <xsl:param name="synonymsFile"/>
+  <xsl:param name="sortFields" select="'true'" />
 
 
 
@@ -646,6 +647,108 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
     </xsl:if>
   </xsl:template>
 
+  <!-- ************************* FIELD SUMMARY TEMPLATE *************************** -->
+  <xsl:template name="FieldSummary">
+    <A NAME="field_summary"></A>
+    <xsl:if test="CONSTANT | VARIABLE | SUPERTYPE">
+
+    <TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%">
+    <TR CLASS="TableHeadingColor">
+    <TD COLSPAN="2"><FONT SIZE="+2">
+    <B>Field Summary</B></FONT></TD>
+    </TR>
+
+    <xsl:choose>
+      <xsl:when test="$sortFields = 'true'">
+        <xsl:for-each select="CONSTANT | VARIABLE | SUPERTYPE">
+          <xsl:sort select="translate(@NAME, $namesFromCase, $namesToCase)"/>
+          <xsl:call-template name="FieldSummaryRow" />
+        </xsl:for-each>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:for-each select="CONSTANT | VARIABLE | SUPERTYPE">
+          <xsl:call-template name="FieldSummaryRow" />
+        </xsl:for-each>
+      </xsl:otherwise>
+    </xsl:choose>
+
+    </TABLE>
+    <P/>
+
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="FieldSummaryRow">
+      <TR CLASS="TableRowColor">
+      <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+      <CODE><xsl:text>&nbsp;</xsl:text>
+      <!-- If possible, convert the plain-text NAME to a link to a matching OBJECT TYPE in the Application-->
+      <xsl:choose>
+        <xsl:when test="local-name() = 'SUPERTYPE'">
+          <!--<xsl:when test="local-name() = 'SUPERTYPE' and /APPLICATION/OBJECT_TYPE[@NAME=./@NAME] ">
+      <A>
+    <xsl:attribute name="href"><xsl:value-of select="translate(@NAME, $uppercase, $lowercase)" disable-output-escaping="yes"/>.html</xsl:attribute>
+    <xsl:value-of select="@NAME" disable-output-escaping="yes"/>
+            </A>
+        <!- - If possible, convert the plain-text TYPE to a link to a matching OBJECT TYPE in the Application-->
+          <xsl:variable name="fieldType" select="translate(@NAME, $namesFromCase, $namesToCase)" />
+        <xsl:call-template name="GenerateTypeLink">
+          <xsl:with-param name="typeName" select="translate(@NAME, $namesFromCase, $namesToCase)" />
+        <xsl:with-param name="schemaName" select="ancestor-or-self::*/@SCHEMA"/>
+                    <xsl:with-param name="localTypeName" select="../TYPE[ translate(@NAME, $uppercase, $lowercase) = $fieldType ]/@NAME " />
+        </xsl:call-template>
+       </xsl:when>
+    <xsl:otherwise>
+      <xsl:variable name="fieldType" select="translate(RETURN/@TYPE, $uppercase, $lowercase)" />
+        <xsl:call-template name="GenerateTypeLink">
+        <xsl:with-param name="typeName" select="RETURN/@TYPE" />
+        <xsl:with-param name="schemaName" select="ancestor-or-self::*/@SCHEMA"/>
+                    <xsl:with-param name="localTypeName" select="../TYPE[ translate(@NAME, $uppercase, $lowercase) = $fieldType ]/@NAME " />
+        </xsl:call-template>
+    </xsl:otherwise>
+      </xsl:choose>
+      </CODE></FONT></TD>
+      <TD><CODE>
+      <xsl:choose>
+    <xsl:when test="local-name() = 'SUPERTYPE'">SUPERTYPE</xsl:when>
+    <xsl:otherwise>
+      <B><A HREF="#{translate(@NAME, $namesFromCase, $namesToCase)}"><xsl:value-of select="translate(@NAME, $namesFromCase, $namesToCase)"/></A></B>
+    </xsl:otherwise>
+      </xsl:choose>
+   <xsl:if test="local-name() = 'CONSTANT'"> CONSTANT</xsl:if>
+   <xsl:if test="@DEFAULT"> := <xsl:value-of select="@DEFAULT" disable-output-escaping="yes" /></xsl:if>
+        </CODE>
+      <BR/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <xsl:if test="not(./TAG[starts-with(@TYPE,'@deprecated') or starts-with(@TYPE,'@DEPRECATED') ])">
+        <xsl:for-each select="COMMENT_FIRST_LINE">
+          <!-- SRT 20110509 <xsl:value-of select="." disable-output-escaping="yes" /> -->
+          <xsl:call-template name="processInlineTag">
+            <xsl:with-param name="comment" >
+      <xsl:call-template name="string-replace-all">
+        <xsl:with-param name="text" select="." />
+        <xsl:with-param name="replace" select="'@deprecated'"  />
+        <xsl:with-param name="by" select = "$boldDeprecated" />
+      </xsl:call-template>
+            </xsl:with-param>
+            <xsl:with-param name="tag" select="'link'" />
+          </xsl:call-template>
+        </xsl:for-each>
+      </xsl:if>
+      <xsl:for-each select="TAG[starts-with(@TYPE,'@deprecated') or starts-with(@TYPE,'@DEPRECATED') ]">
+        <B>Deprecated.</B>&nbsp;<I>
+        <xsl:for-each select="COMMENT">
+          <!-- SRT 20110509 <xsl:value-of select="." disable-output-escaping="yes" /> -->
+          <xsl:call-template name="processInlineTag">
+            <xsl:with-param name="comment" select="." />
+            <xsl:with-param name="tag" select="'link'" />
+          </xsl:call-template>
+        </xsl:for-each></I>
+      </xsl:for-each>
+      </TD>
+      </TR>
+  </xsl:template>
+
   <!-- ************************* START OF PAGE ***************************** -->
   <xsl:template match="/APPLICATION">
   <!-- ********************* START OF top-level object PAGE ************************* -->
@@ -709,91 +812,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
     <P/>
 
     <!-- ************************** FIELD SUMMARY ************************** -->
-    <A NAME="field_summary"></A>
-    <xsl:if test="CONSTANT | VARIABLE | SUPERTYPE">
-
-    <TABLE BORDER="1" CELLPADDING="3" CELLSPACING="0" WIDTH="100%">
-    <TR CLASS="TableHeadingColor">
-    <TD COLSPAN="2"><FONT SIZE="+2">
-    <B>Field Summary</B></FONT></TD>
-    </TR>
-
-    <xsl:for-each select="CONSTANT | VARIABLE | SUPERTYPE">
-      <xsl:sort select="translate(@NAME, $namesFromCase, $namesToCase)"/>
-      <TR CLASS="TableRowColor">
-      <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-      <CODE><xsl:text>&nbsp;</xsl:text>
-      <!-- If possible, convert the plain-text NAME to a link to a matching OBJECT TYPE in the Application-->
-      <xsl:choose>
-	      <xsl:when test="local-name() = 'SUPERTYPE'">
-		      <!--<xsl:when test="local-name() = 'SUPERTYPE' and /APPLICATION/OBJECT_TYPE[@NAME=./@NAME] ">
-	    <A>
-		<xsl:attribute name="href"><xsl:value-of select="translate(@NAME, $uppercase, $lowercase)" disable-output-escaping="yes"/>.html</xsl:attribute>
-		<xsl:value-of select="@NAME" disable-output-escaping="yes"/>
-            </A>
-	      <!- - If possible, convert the plain-text TYPE to a link to a matching OBJECT TYPE in the Application-->
-	        <xsl:variable name="fieldType" select="translate(@NAME, $namesFromCase, $namesToCase)" />
-	      <xsl:call-template name="GenerateTypeLink">
-	        <xsl:with-param name="typeName" select="translate(@NAME, $namesFromCase, $namesToCase)" />
-		    <xsl:with-param name="schemaName" select="ancestor-or-self::*/@SCHEMA"/>
-                    <xsl:with-param name="localTypeName" select="../TYPE[ translate(@NAME, $uppercase, $lowercase) = $fieldType ]/@NAME " />
-	      </xsl:call-template>
-       </xsl:when>
-	  <xsl:otherwise>
-	    <xsl:variable name="fieldType" select="translate(RETURN/@TYPE, $uppercase, $lowercase)" />
-	      <xsl:call-template name="GenerateTypeLink">
-		    <xsl:with-param name="typeName" select="RETURN/@TYPE" />
-		    <xsl:with-param name="schemaName" select="ancestor-or-self::*/@SCHEMA"/>
-                    <xsl:with-param name="localTypeName" select="../TYPE[ translate(@NAME, $uppercase, $lowercase) = $fieldType ]/@NAME " />
-	      </xsl:call-template>
-	  </xsl:otherwise>
-      </xsl:choose>
-      </CODE></FONT></TD>
-      <TD><CODE>
-      <xsl:choose>
-	  <xsl:when test="local-name() = 'SUPERTYPE'">SUPERTYPE</xsl:when>
-	  <xsl:otherwise>
-	    <B><A HREF="#{translate(@NAME, $namesFromCase, $namesToCase)}"><xsl:value-of select="translate(@NAME, $namesFromCase, $namesToCase)"/></A></B>
-	  </xsl:otherwise>
-      </xsl:choose>
-	 <xsl:if test="local-name() = 'CONSTANT'"> CONSTANT</xsl:if>
-	 <xsl:if test="@DEFAULT"> := <xsl:value-of select="@DEFAULT" disable-output-escaping="yes" /></xsl:if>
-        </CODE>
-      <BR/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      <xsl:if test="not(./TAG[starts-with(@TYPE,'@deprecated') or starts-with(@TYPE,'@DEPRECATED') ])">
-        <xsl:for-each select="COMMENT_FIRST_LINE">
-          <!-- SRT 20110509 <xsl:value-of select="." disable-output-escaping="yes" /> -->
-          <xsl:call-template name="processInlineTag">
-            <xsl:with-param name="comment" >
-		  <xsl:call-template name="string-replace-all">
-		    <xsl:with-param name="text" select="." />
-		    <xsl:with-param name="replace" select="'@deprecated'"  />
-		    <xsl:with-param name="by" select = "$boldDeprecated" />
-		  </xsl:call-template>
-            </xsl:with-param>
-            <xsl:with-param name="tag" select="'link'" />
-          </xsl:call-template>
-        </xsl:for-each>
-      </xsl:if>
-      <xsl:for-each select="TAG[starts-with(@TYPE,'@deprecated') or starts-with(@TYPE,'@DEPRECATED') ]">
-        <B>Deprecated.</B>&nbsp;<I>
-        <xsl:for-each select="COMMENT">
-          <!-- SRT 20110509 <xsl:value-of select="." disable-output-escaping="yes" /> -->
-          <xsl:call-template name="processInlineTag">
-            <xsl:with-param name="comment" select="." />
-            <xsl:with-param name="tag" select="'link'" />
-          </xsl:call-template>
-        </xsl:for-each></I>
-      </xsl:for-each>
-      </TD>
-      </TR>
-    </xsl:for-each>
-
-    </TABLE>
-    <P/>
-
-    </xsl:if>
+    <xsl:call-template name="FieldSummary" />
 
     <!-- ************************* TYPE SUMMARY ************************** -->
     <xsl:call-template name="MethodOrTypeOrTriggerSummary">
