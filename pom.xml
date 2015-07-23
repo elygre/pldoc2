@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>pldoc</artifactId>
     <name>PLDoc - ${project.version}</name>
-    <groupId>net.sourceforge.pldoc</groupId>
+    <groupId>no.acando.pldoc</groupId>
     <packaging>jar</packaging>
-    <description>Documentation tool for PLSQL</description>
-    <version>1.5.18-SNAPSHOT</version>
+    <description>Documentation tool for PLSQL (Acando patch)</description>
+    <version>1.5.17.1</version>
     <url>http://pldoc.sourceforge.net</url>
     <licenses>
         <license>
