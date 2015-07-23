@@ -56,6 +56,7 @@ public class Settings
   private boolean keywordsDefaultcase = true; //SRT 20110419
   private boolean keywordsUppercase = false; //SRT 20110419
   private boolean keywordsLowercase = false; //SRT 20110419
+  private boolean sortFields = true;
   // by default, assume system default encoding for all input files
   private String inputEncoding = System.getProperty("file.encoding");
   // we cannot yet set output encoding dynamically, because of XSLs
@@ -105,6 +106,7 @@ public class Settings
     "-keywordsdefaultcase      Convert all names to defaultcase [default true]\n" +
     "-keywordsuppercase        Convert all keywords to uppercase\n" +
     "-keywordslowercase        Convert all keywords to lowercase\n" +
+    "-noSortFields             Do not sort fields\n" +
     "-stylesheetfile <path>    File to change style of the generated document [default: defaultstylesheet.css]\n" +
     "-definesfile <path>       File containing SQL*Plus-style variable substitutions [default: none], for example:\n" +
     "                          &myvar1=123456\n" +
@@ -306,6 +308,10 @@ public class Settings
         // consume  "-keywordslowercase"
         this.keywordsLowercase = true;
       }
+      else if (arg.equalsIgnoreCase("-nosortfields")) {
+        // consume  "-noSortFields"
+        this.sortFields = false;
+      }
       else if (arg.equalsIgnoreCase("-inputencoding")) {
         // consume  "-inputencoding"
         if(!it.hasNext()) {
@@ -458,6 +464,9 @@ public class Settings
   public void setKeywordsLowercase(boolean keywordsLowercase) {
           this.keywordsLowercase = keywordsLowercase;
   }
+  public void setSortFields(boolean sortFields) {
+          this.sortFields = sortFields;
+  }
   public void setInputEncoding(String inputEncoding) {
           this.inputEncoding = inputEncoding;
   }
@@ -584,6 +593,10 @@ public class Settings
 
   public boolean isKeywordsLowercase() {
     return keywordsLowercase;
+  }
+
+  public boolean isSortFields() {
+    return sortFields;
   }
 
   public String getInputEncoding() {

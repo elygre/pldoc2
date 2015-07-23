@@ -1128,6 +1128,7 @@ public class PLDoc
       resLoader.getResourceStream("unit.xsl")));
     //Have to pass in Absolute location of output directory in order to avoid problems with spaces in paths
     transformer.setParameter("targetFolder", settings.getOutputDirectory().getAbsolutePath() + File.separator );
+    transformer.setParameter("sortFields", Boolean.toString(settings.isSortFields()));
     if ( settings.isSaveSourceCode() ) // Generate links to source code 
     {
       transformer.setParameter("sourceRootFolder", '.' );
